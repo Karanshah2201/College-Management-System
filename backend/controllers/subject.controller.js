@@ -3,11 +3,12 @@ const ApiResponse = require("../utils/ApiResponse");
 
 const getSubjectController = async (req, res) => {
   try {
-    const { branch, semester } = req.query;
+    const { branch, semester, facultyId } = req.query;
     let query = {};
     if (branch) query.branch = branch;
     if (semester) query.semester = semester;
-    let subjects = await Subject.find(query).populate("branch");
+    if (facultyId) query.facultyId = facultyId;
+    let subjects = await Subject.find(query).populate("branch").populate("facultyId", "firstName lastName");
     if (!subjects || subjects.length === 0) {
       return ApiResponse.error("No Subjects Found", 404).send(res);
     }
@@ -18,7 +19,7 @@ const getSubjectController = async (req, res) => {
 };
 
 const addSubjectController = async (req, res) => {
-  const { name, code, branch, semester, credits } = req.body;
+  const { name, code, branch, semester, credits, facultyId } = req.body;
 
   if (!name || !code || !branch || !semester || !credits) {
     return ApiResponse.error("All fields are required", 400).send(res);
@@ -36,18 +37,17 @@ const addSubjectController = async (req, res) => {
       branch,
       semester,
       credits,
+      facultyId: facultyId || null,
     });
 
-    return ApiResponse.created(newSubject, "Subject Added Successfully!").send(
-      res
-    );
+    return ApiResponse.created(newSubject, "Subject Added Successfully!").send(res);
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
   }
 };
 
 const updateSubjectController = async (req, res) => {
-  const { name, code, branch, semester, credits } = req.body;
+  const { name, code, branch, semester, credits, facultyId } = req.body;
   const updateFields = {};
 
   if (name) updateFields.name = name;
@@ -55,6 +55,8 @@ const updateSubjectController = async (req, res) => {
   if (branch) updateFields.branch = branch;
   if (semester) updateFields.semester = semester;
   if (credits) updateFields.credits = credits;
+  // Allow unsetting facultyId by passing empty string
+  updateFields.facultyId = facultyId || null;
 
   if (Object.keys(updateFields).length === 0) {
     return ApiResponse.error("No fields provided for update", 400).send(res);
@@ -69,9 +71,7 @@ const updateSubjectController = async (req, res) => {
       return ApiResponse.error("Subject Not Found!", 404).send(res);
     }
 
-    return ApiResponse.success(subject, "Subject Updated Successfully!").send(
-      res
-    );
+    return ApiResponse.success(subject, "Subject Updated Successfully!").send(res);
   } catch (error) {
     return ApiResponse.error(error.message).send(res);
   }

@@ -11,5 +11,7 @@ router.get("/", auth, getSubjectController);
 router.post("/", auth, addSubjectController);
 router.delete("/:id", auth, deleteSubjectController);
 router.put("/:id", auth, updateSubjectController);
+router.patch("/:id", auth, updateSubjectController);
+
 
 module.exports = router;

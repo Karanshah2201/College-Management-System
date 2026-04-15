@@ -13,6 +13,10 @@ const auth = async (req, res, next) => {
 
     token = token.split(" ")[1];
 
+    if (!token || token === "null" || token === "undefined") {
+      return ApiResponse.unauthorized("Authentication token required").send(res);
+    }
+
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       if (!decoded.userId) {
@@ -23,7 +27,6 @@ const auth = async (req, res, next) => {
       req.token = token;
       next();
     } catch (jwtError) {
-      console.error("JWT Error:", jwtError);
       return ApiResponse.unauthorized("Invalid or expired token").send(res);
     }
   } catch (error) {

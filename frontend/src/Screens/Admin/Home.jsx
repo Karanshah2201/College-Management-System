@@ -12,17 +12,33 @@ import { setUserData } from "../../redux/actions";
 import axiosWrapper from "../../utils/AxiosWrapper";
 import Profile from "./Profile";
 import Exam from "../Exam";
+import Leave from "./Leave";
 import { useNavigate, useLocation } from "react-router-dom";
+import AdminFees from "./Fees";
+import { 
+  MdHome, 
+  MdPerson, 
+  MdGroup, 
+  MdAccountTree, 
+  MdNotifications, 
+  MdSchool, 
+  MdLibraryBooks, 
+  MdPlaylistAddCheck, 
+  MdAdminPanelSettings,
+  MdPayments
+} from "react-icons/md";
 
 const MENU_ITEMS = [
-  { id: "home", label: "Home", component: Profile },
-  { id: "student", label: "Student", component: Student },
-  { id: "faculty", label: "Faculty", component: Faculty },
-  { id: "branch", label: "Branch", component: Branch },
-  { id: "notice", label: "Notice", component: Notice },
-  { id: "exam", label: "Exam", component: Exam },
-  { id: "subjects", label: "Subjects", component: Subjects },
-  { id: "admin", label: "Admin", component: Admin },
+  { id: "home", label: "Overview", component: Profile, icon: MdHome, color: "var(--navy)" },
+  { id: "student", label: "Students", component: Student, icon: MdPerson, color: "#3b82f6" },
+  { id: "faculty", label: "Faculty", component: Faculty, icon: MdGroup, color: "#10b981" },
+  { id: "branch", label: "Branches", component: Branch, icon: MdAccountTree, color: "#8b5cf6" },
+  { id: "fees", label: "Finances", component: AdminFees, icon: MdPayments, color: "#f59e0b" },
+  { id: "notice", label: "Notices", component: Notice, icon: MdNotifications, color: "#ec4899" },
+  { id: "exam", label: "Exams", component: Exam, icon: MdSchool, color: "#f43f5e" },
+  { id: "subjects", label: "Subjects", component: Subjects, icon: MdLibraryBooks, color: "#6366f1" },
+  { id: "leave", label: "Requests", component: Leave, icon: MdPlaylistAddCheck, color: "#06b6d4" },
+  { id: "admin", label: "Core Admin", component: Admin, icon: MdAdminPanelSettings, color: "var(--navy-dark)" },
 ];
 
 const Home = () => {
@@ -73,17 +89,7 @@ const Home = () => {
 
   const getMenuItemClass = (menuId) => {
     const isSelected = selectedMenu === menuId;
-    return `
-      text-center px-6 py-3 cursor-pointer
-      font-medium text-sm w-full
-      rounded-md
-      transition-all duration-300 ease-in-out
-      ${
-        isSelected
-          ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-lg transform -translate-y-1"
-          : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-      }
-    `;
+    return `menu-item ${isSelected ? "menu-item-active" : "menu-item-inactive"}`;
   };
 
   const renderContent = () => {
@@ -112,20 +118,26 @@ const Home = () => {
   return (
     <>
       <Navbar />
-      <div className="max-w-7xl mx-auto">
-        <ul className="flex justify-evenly items-center gap-10 w-full mx-auto my-8">
-          {MENU_ITEMS.map((item) => (
-            <li
-              key={item.id}
-              className={getMenuItemClass(item.id)}
-              onClick={() => handleMenuClick(item.id)}
-            >
-              {item.label}
-            </li>
-          ))}
-        </ul>
+      <div className="max-w-7xl mx-auto px-4 pb-10">
+        {/* Bento Navigation Bar */}
+        <div className="bento-card-flat p-2 mb-8 anim-fade-up">
+          <ul className="flex flex-wrap justify-center items-center gap-1.5">
+            {MENU_ITEMS.map((item) => (
+              <li
+                key={item.id}
+                className={getMenuItemClass(item.id)}
+                onClick={() => handleMenuClick(item.id)}
+              >
+                <item.icon className="text-base" style={{ color: selectedMenu === item.id ? 'white' : item.color }} />
+                {item.label}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-        {renderContent()}
+        <div className="anim-fade-up" key={selectedMenu}>
+          {renderContent()}
+        </div>
       </div>
       <Toaster position="bottom-center" />
     </>

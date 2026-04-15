@@ -10,15 +10,23 @@ import Material from "./Material";
 import Profile from "./Profile";
 import Exam from "../Exam";
 import ViewMarks from "./ViewMarks";
+import Attendance from "./Attendance";
+import Fees from "./Fees";
 import { useNavigate, useLocation } from "react-router-dom";
+import { 
+  MdHome, MdSchedule, MdLibraryBooks, MdNotifications, 
+  MdSchool, MdAssessment, MdHowToReg, MdMonetizationOn 
+} from "react-icons/md";
 
 const MENU_ITEMS = [
-  { id: "home", label: "Home", component: null },
-  { id: "timetable", label: "Timetable", component: Timetable },
-  { id: "material", label: "Material", component: Material },
-  { id: "notice", label: "Notice", component: Notice },
-  { id: "exam", label: "Exam", component: Exam },
-  { id: "marks", label: "Marks", component: ViewMarks },
+  { id: "home", label: "Dashboard", component: null, icon: MdHome, color: "var(--navy)" },
+  { id: "attendance", label: "Attendance", component: Attendance, icon: MdHowToReg, color: "#10b981" },
+  { id: "marks", label: "Academic Results", component: ViewMarks, icon: MdAssessment, color: "#f59e0b" },
+  { id: "fees", label: "Fee Payments", component: Fees, icon: MdMonetizationOn, color: "#ef4444" },
+  { id: "timetable", label: "Class Schedule", component: Timetable, icon: MdSchedule, color: "#3b82f6" },
+  { id: "material", label: "Study Materials", component: Material, icon: MdLibraryBooks, color: "#6366f1" },
+  { id: "notice", label: "Notice Board", component: Notice, icon: MdNotifications, color: "#ec4899" },
+  { id: "exam", label: "Exam Calendar", component: Exam, icon: MdSchool, color: "#f43f5e" },
 ];
 
 const Home = () => {
@@ -33,98 +41,68 @@ const Home = () => {
   const fetchUserDetails = async () => {
     setIsLoading(true);
     try {
-      toast.loading("Loading user details...");
       const response = await axiosWrapper.get(`/student/my-details`, {
-        headers: {
-          Authorization: `Bearer ${userToken}`,
-        },
+        headers: { Authorization: `Bearer ${userToken}` },
       });
       if (response.data.success) {
         setProfileData(response.data.data);
         dispatch(setUserData(response.data.data));
-      } else {
-        toast.error(response.data.message);
       }
-    } catch (error) {
-      console.error(error);
-      toast.error(
-        error.response?.data?.message || "Error fetching user details"
-      );
-    } finally {
-      setIsLoading(false);
-      toast.dismiss();
-    }
+    } catch (error) { toast.error("Failed to load student details"); }
+    finally { setIsLoading(false); }
   };
 
-  useEffect(() => {
-    fetchUserDetails();
-  }, [dispatch, userToken]);
-
-  const getMenuItemClass = (menuId) => {
-    const isSelected = selectedMenu.toLowerCase() === menuId.toLowerCase();
-    return `
-      text-center px-6 py-3 cursor-pointer
-      font-medium text-sm w-full
-      rounded-md
-      transition-all duration-300 ease-in-out
-      ${
-        isSelected
-          ? "bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-lg transform -translate-y-1"
-          : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-      }
-    `;
-  };
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex justify-center items-center h-64">Loading...</div>
-      );
-    }
-
-    if (selectedMenu === "home" && profileData) {
-      return <Profile profileData={profileData} />;
-    }
-
-    const MenuItem = MENU_ITEMS.find(
-      (item) => item.label.toLowerCase() === selectedMenu.toLowerCase()
-    )?.component;
-
-    return MenuItem && <MenuItem />;
-  };
+  useEffect(() => { fetchUserDetails(); }, [dispatch, userToken]);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const pathMenuId = urlParams.get("page") || "home";
     const validMenu = MENU_ITEMS.find((item) => item.id === pathMenuId);
     setSelectedMenu(validMenu ? validMenu.id : "home");
-  }, [location.pathname]);
+  }, [location.search]);
 
   const handleMenuClick = (menuId) => {
     setSelectedMenu(menuId);
     navigate(`/student?page=${menuId}`);
   };
 
-  return (
-    <>
-      <Navbar />
-      <div className="max-w-7xl mx-auto">
-        <ul className="flex justify-evenly items-center gap-10 w-full mx-auto my-8">
-          {MENU_ITEMS.map((item) => (
-            <li
-              key={item.id}
-              className={getMenuItemClass(item.id)}
-              onClick={() => handleMenuClick(item.id)}
-            >
-              {item.label}
-            </li>
-          ))}
-        </ul>
+  const renderContent = () => {
+    if (isLoading) return <div className="flex justify-center items-center h-64"><div className="animate-spin w-8 h-8 border-4 border-[var(--navy)] border-t-transparent rounded-full" /></div>;
+    if (selectedMenu === "home" && profileData) return <Profile profileData={profileData} />;
+    const MenuItem = MENU_ITEMS.find(item => item.id === selectedMenu)?.component;
+    return MenuItem && <MenuItem profileData={profileData} />;
+  };
 
-        {renderContent()}
+  return (
+    <div className="min-h-screen bg-[var(--bg-main)]">
+      <Navbar />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Bento Contextual Navigation */}
+        <div className="bento-card-flat p-2 mb-10 overflow-x-auto no-scrollbar">
+          <ul className="flex items-center gap-2 min-w-max">
+            {MENU_ITEMS.map((item) => (
+              <li
+                key={item.id}
+                onClick={() => handleMenuClick(item.id)}
+                className={`flex items-center gap-2.5 px-5 py-3 rounded-2xl cursor-pointer transition-all duration-300 transform ${
+                  selectedMenu === item.id
+                    ? "bg-[var(--navy)] text-white shadow-lg scale-105"
+                    : "hover:bg-[var(--bg-inset)] text-gray-500 hover:text-[var(--navy)]"
+                }`}
+              >
+                <item.icon size={20} style={{ color: selectedMenu === item.id ? "white" : item.color }} />
+                <span className="text-sm font-bold tracking-tight whitespace-nowrap">{item.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="anim-fade-up">
+          {renderContent()}
+        </div>
       </div>
-      <Toaster position="bottom-center" />
-    </>
+      <Toaster position="bottom-right" />
+    </div>
   );
 };
 

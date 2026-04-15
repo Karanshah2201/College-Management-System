@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { IoMdLink, IoMdAdd, IoMdClose } from "react-icons/io";
 import { HiOutlineCalendar } from "react-icons/hi";
 import { useLocation, useNavigate } from "react-router-dom";
-import { MdDeleteOutline, MdEditNote } from "react-icons/md";
+import { MdDeleteOutline, MdEditNote, MdNotifications, MdRecordVoiceOver, MdChevronRight, MdLayers } from "react-icons/md";
 import toast from "react-hot-toast";
 import Heading from "../components/Heading";
 import axiosWrapper from "../utils/AxiosWrapper";
@@ -22,329 +22,149 @@ const Notice = () => {
   const token = localStorage.getItem("userToken");
 
   const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    type: "student",
-    link: "",
+    title: "", description: "", type: "student", link: "",
   });
 
   useEffect(() => {
-    if (!token) {
-      toast.error("Please login to continue");
-      navigate("/login");
-    }
+    if (!token) { toast.error("Session expired"); navigate("/login"); }
   }, [token, navigate]);
 
   const getNotices = async () => {
     try {
       setDataLoading(true);
-      const response = await axiosWrapper.get("/notice", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.data.success) {
-        setNotices(response.data.data);
-      } else {
-        toast.error(response.data.message);
-      }
+      const response = await axiosWrapper.get("/notice", { headers: { Authorization: `Bearer ${token}` } });
+      if (response.data.success) setNotices(response.data.data);
     } catch (error) {
-      if (error.response?.status === 404) {
-        setNotices([]);
-      } else {
-        toast.error(error.response?.data?.message || "Failed to load notices");
-      }
-    } finally {
-      setDataLoading(false);
-    }
+      if (error.response?.status === 404) setNotices([]);
+    } finally { setDataLoading(false); }
   };
 
-  useEffect(() => {
-    getNotices();
-  }, [router.pathname]);
+  useEffect(() => { getNotices(); }, [router.pathname]);
 
-  const openAddModal = () => {
-    setEditingNotice(null);
-    setFormData({
-      title: "",
-      description: "",
-      type: "student",
-      link: "",
-    });
-    setShowAddModal(true);
-  };
-
-  const handleEdit = (notice) => {
-    setEditingNotice(notice);
-    setFormData({
-      title: notice.title || "",
-      description: notice.description || "",
-      type: notice.type || "student",
-      link: notice.link || "",
-    });
-    setShowAddModal(true);
-  };
+  const openAddModal = () => { setEditingNotice(null); setFormData({ title: "", description: "", type: "student", link: "" }); setShowAddModal(true); };
+  const handleEdit = (notice) => { setEditingNotice(notice); setFormData({ title: notice.title || "", description: notice.description || "", type: notice.type || "student", link: notice.link || "" }); setShowAddModal(true); };
 
   const handleSubmitNotice = async (e) => {
     e.preventDefault();
-    const { title, description, type } = formData;
-
-    if (!title || !description || !type) {
-      toast.dismiss();
-      toast.error("Please fill all the fields");
-      return;
-    }
-
+    if (!formData.title || !formData.description) { toast.error("Essential fields missing"); return; }
     try {
-      toast.loading(editingNotice ? "Updating Notice" : "Adding Notice");
-
-      const response = await axiosWrapper[editingNotice ? "put" : "post"](
-        `/notice${editingNotice ? `/${editingNotice._id}` : ""}`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
+      toast.loading("Promulgating broadcast...");
+      const response = await axiosWrapper[editingNotice ? "put" : "post"](`/notice${editingNotice ? `/${editingNotice._id}` : ""}`, formData, { headers: { Authorization: `Bearer ${token}` } });
       toast.dismiss();
-      if (response.data.success) {
-        toast.success(response.data.message);
-        getNotices();
-        setShowAddModal(false);
-        setEditingNotice(null);
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error) {
-      toast.dismiss();
-      toast.error(error.response?.data?.message || "Operation failed");
-    }
+      if (response.data.success) { toast.success("Broadcast archived"); getNotices(); setShowAddModal(false); }
+    } catch { toast.dismiss(); toast.error("Sync failure"); }
   };
 
   const handleDelete = async () => {
     try {
-      toast.loading("Deleting Notice");
-      const response = await axiosWrapper.delete(
-        `/notice/${selectedNoticeId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
+      toast.loading("Expunging broadcast...");
+      const response = await axiosWrapper.delete(`/notice/${selectedNoticeId}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.dismiss();
-      if (response.data.success) {
-        toast.success("Notice deleted successfully");
-        setIsDeleteConfirmOpen(false);
-        getNotices();
-      } else {
-        toast.error(response.data.message);
-      }
-    } catch (error) {
-      toast.dismiss();
-      toast.error(error.response?.data?.message || "Failed to delete notice");
-    }
+      if (response.data.success) { toast.success("Object expunged"); setIsDeleteConfirmOpen(false); getNotices(); }
+    } catch { toast.dismiss(); toast.error("Operation failed"); }
   };
 
+  const TYPE_COLORS = {
+    student: { bg: "bg-blue-50/50", text: "text-blue-500", border: "border-blue-100", icon: "text-blue-400" },
+    faculty: { bg: "bg-amber-50/50", text: "text-amber-500", border: "border-amber-100", icon: "text-amber-400" },
+    both: { bg: "bg-emerald-50/50", text: "text-emerald-500", border: "border-emerald-100", icon: "text-emerald-400" },
+  };
+
+  const isOperator = router.pathname === "/faculty" || router.pathname === "/admin";
+
   return (
-    <div className="w-full mx-auto flex justify-center items-start flex-col my-10">
-      <div className="relative flex justify-between items-center w-full">
-        <Heading title="Notices" />
-        {!dataLoading &&
-          (router.pathname === "/faculty" || router.pathname === "/admin") && (
-            <CustomButton onClick={openAddModal}>
-              <IoMdAdd className="text-2xl" />
-            </CustomButton>
-          )}
+    <div className="w-full space-y-8 anim-fade-up">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <Heading title="Broadcasting Hub" subtitle="Official faculty and student circular synchronization system" />
+        {isOperator && (
+          <CustomButton onClick={openAddModal} className="!rounded-2xl shadow-xl shadow-blue-100"><IoMdAdd className="mr-2" size={20} /> New Dispatch</CustomButton>
+        )}
       </div>
 
-      {dataLoading && <Loading />}
-
-      {!dataLoading && (
-        <div className="mt-8">
-          {notices.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No notices found
-            </div>
-          ) : (
-            <div className="mt-8 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {notices?.map((notice) => (
-                <div
-                  key={notice._id}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 w-[350px]"
-                >
-                  <div className="p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3
-                        className={`text-lg font-semibold line-clamp-2 group flex items-start ${
-                          notice.link
-                            ? "cursor-pointer hover:text-blue-600"
-                            : ""
-                        }`}
-                        onClick={() => notice.link && window.open(notice.link)}
-                      >
-                        {notice.title}
-                        {notice.link && (
-                          <IoMdLink className="ml-2 flex-shrink-0 text-xl opacity-70 group-hover:opacity-100 group-hover:text-blue-500" />
-                        )}
-                      </h3>
-                      {(router.pathname === "/faculty" ||
-                        router.pathname === "/admin") && (
-                        <div className="flex gap-2 ml-2 flex-shrink-0">
-                          <CustomButton
-                            onClick={() => {
-                              setSelectedNoticeId(notice._id);
-                              setIsDeleteConfirmOpen(true);
-                            }}
-                            variant="danger"
-                            className="!p-1.5 rounded-full"
-                            title="Delete Notice"
-                          >
-                            <MdDeleteOutline size={18} />
-                          </CustomButton>
-                          <CustomButton
-                            onClick={() => handleEdit(notice)}
-                            variant="secondary"
-                            className="!p-1.5 rounded-full"
-                            title="Edit Notice"
-                          >
-                            <MdEditNote size={18} />
-                          </CustomButton>
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                      {notice.description}
-                    </p>
-
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <div className="flex items-center">
-                        <HiOutlineCalendar className="mr-1" />
-                        {new Date(notice.createdAt).toLocaleString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })}
-                      </div>
-                      {notice.type !== "both" && (
-                        <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">
-                          {notice.type === "student" ? "Student" : "Faculty"}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+      {dataLoading ? <div className="flex justify-center py-20"><div className="animate-spin w-10 h-10 border-4 border-[var(--navy)] border-t-transparent rounded-full" /></div> : notices.length === 0 ? (
+        <div className="bento-card p-20 text-center flex flex-col items-center">
+          <MdNotifications size={64} className="text-gray-100 mb-4" />
+          <p className="text-gray-400 font-medium italic">No active broadcasts found in the repository</p>
+        </div>
+      ) : (
+        <div className="bento-grid-3 anim-stagger">
+          {notices.map((notice, idx) => {
+            const tc = TYPE_COLORS[notice.type] || TYPE_COLORS.both;
+            return (
+              <div key={notice._id} className="bento-card hover-lift p-6 anim-scale-in group" style={{ animationDelay: `${idx * 0.05}s` }}>
+                <div className="flex items-start justify-between mb-5">
+                   <div className={`p-2.5 rounded-xl border ${tc.bg} ${tc.border} transition-transform group-hover:scale-110`}>
+                      <MdRecordVoiceOver className={tc.icon} size={20} />
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <span className={`bento-badge !py-0.5 !text-[0.6rem] uppercase font-black ${notice.type === 'student' ? 'bento-badge-info' : notice.type === 'faculty' ? 'bento-badge-warning' : 'bento-badge-success'}`}>
+                       {notice.type}
+                     </span>
+                     {isOperator && (
+                       <div className="flex gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <button onClick={() => handleEdit(notice)} className="p-1.5 rounded-lg text-gray-400 hover:text-[var(--navy)] hover:bg-[var(--bg-inset)] transition-all"><MdEditNote size={18} /></button>
+                         <button onClick={() => { setSelectedNoticeId(notice._id); setIsDeleteConfirmOpen(true); }} className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"><MdDeleteOutline size={18} /></button>
+                       </div>
+                     )}
+                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+
+                <h3 className={`text-sm font-black text-[var(--navy-dark)] mb-3 leading-snug tracking-tight ${notice.link ? "cursor-pointer group-hover:text-[var(--navy)]" : ""}`} onClick={() => notice.link && window.open(notice.link)}>
+                  {notice.title}
+                  {notice.link && <IoMdLink className="inline ml-1 text-gray-400 opacity-50" />}
+                </h3>
+                
+                <p className="text-[0.68rem] font-medium text-gray-500 line-clamp-3 mb-6 leading-relaxed group-hover:text-gray-600">
+                  {notice.description}
+                </p>
+
+                <div className="flex items-center justify-between border-t border-gray-50 pt-4">
+                  <div className="flex items-center gap-2 text-[0.6rem] font-black text-gray-400 uppercase tracking-widest">
+                    <HiOutlineCalendar size={14} className="text-gray-300" />
+                    {new Date(notice.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                  </div>
+                  {notice.link && (
+                    <button onClick={() => window.open(notice.link)} className="text-[0.6rem] font-black text-[var(--navy)] flex items-center gap-1 group/link uppercase">
+                      Examine Link <MdChevronRight className="group-hover/link:translate-x-1 transition-transform" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Modal UI */}
+      {/* Dispatch Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg w-[500px] max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center p-6 border-b">
-              <h2 className="text-xl font-semibold">
-                {editingNotice ? "Edit Notice" : "Add New Notice"}
+        <div className="bento-modal-overlay">
+          <div className="bento-modal !max-w-md">
+            <div className="bento-modal-header border-b-0 pb-2">
+              <h2 className="text-lg font-black text-[var(--navy-dark)] tracking-tight uppercase flex items-center gap-3">
+                <MdLayers className="text-[var(--navy)]" />
+                {editingNotice ? "Modify Dispatch" : "Construct Dispatch"}
               </h2>
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setEditingNotice(null);
-                }}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <IoMdClose className="text-3xl" />
-              </button>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-300 hover:text-gray-500 transition-colors"><IoMdClose size={24} /></button>
             </div>
-
-            <form onSubmit={handleSubmitNotice} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notice Title
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notice Description
-                </label>
-                <textarea
-                  rows="4"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notice Link (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.link}
-                  onChange={(e) =>
-                    setFormData({ ...formData, link: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type Of Notice
-                </label>
-                <select
-                  value={formData.type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, type: e.target.value })
-                  }
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select Type</option>
-                  <option value="student">Student</option>
-                  <option value="faculty">Faculty</option>
-                  <option value="both">Both</option>
+            <form onSubmit={handleSubmitNotice} className="p-6 space-y-5">
+              <div><label className="bento-label">Subject Identification</label><input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="bento-input" placeholder="Core identifier..." required /></div>
+              <div><label className="bento-label">Broadcast Content</label><textarea rows="5" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="bento-input" placeholder="Transcribe official update..." required /></div>
+              <div><label className="bento-label">External Reference (Optional)</label><input type="text" value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })} className="bento-input" placeholder="https://resource.cdn/..." /></div>
+              <div><label className="bento-label">Target Demographic</label>
+                <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="bento-input">
+                  <option value="student">Student Registry</option><option value="faculty">Faculty Registry</option><option value="both">Global Broadcast</option>
                 </select>
               </div>
-
-              <div className="flex justify-end gap-4 pt-4 border-t">
-                <CustomButton
-                  variant="secondary"
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setEditingNotice(null);
-                  }}
-                >
-                  Cancel
-                </CustomButton>
-                <CustomButton type="submit" variant="primary">
-                  {editingNotice ? "Update" : "Add"}
-                </CustomButton>
+              <div className="pt-4 flex gap-3">
+                 <button type="button" onClick={() => setShowAddModal(false)} className="flex-1 bento-card-flat py-3 font-black text-[0.65rem] uppercase tracking-widest text-gray-400 hover:text-gray-600">ABORT</button>
+                 <CustomButton type="submit" className="flex-[2] !py-3 shadow-xl shadow-blue-100">{editingNotice ? "OVERWRITE" : "COMMENCE"}</CustomButton>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <DeleteConfirm
-        isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
-        onConfirm={handleDelete}
-        message="Are you sure you want to delete this notice?"
-      />
+      <DeleteConfirm isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} onConfirm={handleDelete} message="Confirm data expunction of this broadcast." />
     </div>
   );
 };

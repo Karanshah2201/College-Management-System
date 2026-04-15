@@ -30,6 +30,10 @@ const studentDetailsSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    semesterStartedAt: {
+      type: Date,
+      default: Date.now,
+    },
     branchId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",

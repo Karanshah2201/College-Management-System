@@ -23,6 +23,11 @@ const Subject = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    facultyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "FacultyDetail",
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { toast } from "react-hot-toast";
 import axiosWrapper from "../utils/AxiosWrapper";
 import { IoMdClose } from "react-icons/io";
+import { MdLock, MdShield, MdFingerprint } from "react-icons/md";
 import CustomButton from "./CustomButton";
 
 const UpdatePasswordLoggedIn = ({ onClose }) => {
@@ -14,106 +15,102 @@ const UpdatePasswordLoggedIn = ({ onClose }) => {
 
   const handlePasswordUpdate = async (e) => {
     e.preventDefault();
-
-    if (newPassword !== confirmPassword) {
-      toast.error("New passwords do not match");
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long");
-      return;
-    }
-
+    if (newPassword !== confirmPassword) { toast.error("Checkphrase mismatch"); return; }
+    if (newPassword.length < 8) { toast.error("Checkphrase must be ≥ 8 symbols"); return; }
+    
     setIsLoading(true);
+    toast.loading("Updating security settings...");
     try {
-      const response = await axiosWrapper.post(
-        `/${userType.toLowerCase()}/change-password`,
-        {
-          currentPassword,
-          newPassword,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${userToken}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        toast.success("Password updated successfully");
-        setCurrentPassword("");
-        setNewPassword("");
-        setConfirmPassword("");
-      } else {
-        toast.error(response.data.message);
+      const res = await axiosWrapper.post(`/${userType.toLowerCase()}/change-password`, { currentPassword, newPassword }, {
+          headers: { Authorization: `Bearer ${userToken}` },
+      });
+      toast.dismiss();
+      if (res.data.success) { 
+        toast.success("Security status updated"); 
+        onClose();
       }
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to update password");
-    } finally {
-      setIsLoading(false);
-    }
+    } catch { toast.dismiss(); toast.error("Session expired or invalid credentials"); }
+    finally { setIsLoading(false); }
   };
 
   return (
-    <section className="w-full h-full flex justify-center items-center bg-black bg-opacity-50 fixed top-0 left-0 z-50">
-      <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md w-[50%]">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-semibold mb-6">Update Password</h2>
-          <CustomButton
-            onClick={onClose}
-            className="bg-red-500 p-2 rounded-full text-white"
-          >
-            <IoMdClose className="text-2xl" />
-          </CustomButton>
+    <div className="bento-modal-overlay z-[200]" onClick={onClose}>
+      <div className="bento-modal !max-w-md relative overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[var(--navy)] to-[var(--gold)]"></div>
+        
+        <div className="bento-modal-header border-b-0 pb-0">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-[var(--bg-inset)] text-[var(--navy)] flex items-center justify-center border border-gray-100 shadow-inner">
+                <MdShield size={20} />
+             </div>
+              <div>
+                <h2 className="text-base font-black text-[var(--navy-dark)] uppercase tracking-tight">Account Security</h2>
+                <p className="text-[0.6rem] font-bold text-gray-400 uppercase tracking-widest leading-none">Update Login Credentials</p>
+              </div>
+          </div>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-500 transition-colors p-1"><IoMdClose size={24} /></button>
         </div>
-        <form onSubmit={handlePasswordUpdate}>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Current Password
+
+        <form onSubmit={handlePasswordUpdate} className="p-8 space-y-6">
+          <div className="space-y-2 group">
+            <label className="bento-label !mb-0 flex items-center gap-2">
+              <MdLock className="text-gray-300 transition-colors group-hover:text-[var(--navy)]" size={14} /> 
+              Current Account Password
             </label>
             <input
               type="password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bento-input"
+              placeholder="Enter current password"
               required
             />
           </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              New Password
-            </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+
+          <div className="h-px bg-gray-50 mx-4"></div>
+
+          <div className="space-y-5">
+            <div className="space-y-2 group">
+              <label className="bento-label !mb-0 flex items-center gap-2">
+                <MdFingerprint className="text-gray-300 transition-colors group-hover:text-emerald-500" size={14} /> 
+                New Secure Password
+              </label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="bento-input focus:border-emerald-500/30"
+                placeholder="Minimum 8 characters"
+                required
+              />
+            </div>
+            <div className="space-y-2 group">
+              <label className="bento-label !mb-0 flex items-center gap-2">
+                <MdFingerprint className="text-gray-300 transition-colors group-hover:text-emerald-500" size={14} /> 
+                Confirm New Password
+              </label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bento-input focus:border-emerald-500/30"
+                placeholder="Re-type new password"
+                required
+              />
+            </div>
           </div>
-          <div className="mb-6">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Confirm New Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+
+          <div className="pt-6 flex gap-3">
+             <button type="button" onClick={onClose} className="flex-1 bento-card-flat py-3.5 font-black text-[0.6rem] uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-colors rounded-2xl">
+               Cancel
+             </button>
+             <CustomButton type="submit" disabled={isLoading} className="flex-[2] !py-3.5 shadow-xl shadow-blue-100">
+               {isLoading ? "UPDATING..." : "UPDATE PASSWORD"}
+             </CustomButton>
           </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Updating..." : "Update Password"}
-          </button>
         </form>
       </div>
-    </section>
+    </div>
   );
 };
 
