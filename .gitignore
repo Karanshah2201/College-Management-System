@@ -10,7 +10,9 @@ node_modules
 /coverage
 
 # production
-/build
+build/
+.vercel
+
 
 # misc
 .DS_Store

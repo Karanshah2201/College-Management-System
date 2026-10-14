@@ -2,21 +2,44 @@ const connectToMongo = require("./database/db");
 const express = require("express");
 const app = express();
 const path = require("path");
+const cors = require("cors");
 const setupAutomation = require("./utils/automation");
 
 connectToMongo();
-setupAutomation();
 
-const port = 4000 || process.env.PORT;
-var cors = require("cors");
+if (!process.env.VERCEL) {
+  setupAutomation();
+}
+
+const port = process.env.PORT || 4000;
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_API_LINK,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like curl, Postman, or mobile apps)
+      if (!origin) return callback(null, true);
+      if (
+        !process.env.FRONTEND_API_LINK ||
+        process.env.FRONTEND_API_LINK === "*" ||
+        origin === process.env.FRONTEND_API_LINK ||
+        origin.endsWith(".vercel.app") ||
+        origin.includes("localhost")
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
   })
 );
 
 app.use(express.json()); //to convert request data to json
+
+// Ensure DB connection for serverless invocations
+app.use(async (req, res, next) => {
+  await connectToMongo();
+  next();
+});
 
 app.get("/", (req, res) => {
   res.send("Hello 👋 I am Working Fine 🚀");
@@ -40,6 +63,11 @@ app.use("/api/leave", require("./routes/leave.route"));
 app.use("/api/fees", require("./routes/fees.route"));
 app.use("/api/payment", require("./routes/payment.route"));
 
-app.listen(port, () => {
-  console.log(`Server Listening On http://localhost:${port}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`Server Listening On http://localhost:${port}`);
+  });
+}
+
+module.exports = app;
+
