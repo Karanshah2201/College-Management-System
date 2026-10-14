@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS Test Case Report</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            padding: 30px 40px;
+        }
+
+        .report-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 30px 36px;
+            border-radius: 14px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 30px rgba(26, 26, 46, 0.25);
+        }
+
+        .report-header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+
+        .report-header .subtitle {
+            font-size: 13px;
+            opacity: 0.75;
+            margin-bottom: 18px;
+        }
+
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .stat-badge.pass { color: #4ade80; }
+        .stat-badge.fail { color: #f87171; }
+        .stat-badge.rate { color: #60a5fa; }
+        .stat-badge.total { color: #fbbf24; }
+
+        .module-section {
+            margin-bottom: 26px;
+        }
+
+        .module-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f3460;
+            padding: 10px 18px;
+            background: linear-gradient(90deg, #e8edf5, transparent);
+            border-left: 4px solid #0f3460;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            font-size: 11.5px;
+            table-layout: fixed;
+        }
+
+        thead th {
+            background: #1a1a2e;
+            color: white;
+            padding: 11px 10px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        thead th:first-child { border-radius: 10px 0 0 0; }
+        thead th:last-child { border-radius: 0 10px 0 0; }
+
+        /* Column widths */
+        th:nth-child(1), td:nth-child(1) { width: 60px; }
+        th:nth-child(2), td:nth-child(2) { width: 155px; }
+        th:nth-child(3), td:nth-child(3) { width: 190px; }
+        th:nth-child(4), td:nth-child(4) { width: 155px; }
+        th:nth-child(5), td:nth-child(5) { width: 160px; }
+        th:nth-child(6), td:nth-child(6) { width: 170px; }
+        th:nth-child(7), td:nth-child(7) { width: 65px; }
+
+        tbody td {
+            padding: 10px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fc;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fafbfd;
+        }
+
+        tbody tr:nth-child(even):hover {
+            background: #f0f2f8;
+        }
+
+        .tc-id {
+            font-weight: 700;
+            color: #0f3460;
+            font-size: 12px;
+        }
+
+        .tc-name {
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .status-pass {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+        }
+
+        .status-fail {
+            display: inline-block;
+            background: #fee2e2;
+            color: #991b1b;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+        }
+
+        .fail-row {
+            background: #fff5f5 !important;
+        }
+
+        .fail-row:hover {
+            background: #fee2e2 !important;
+        }
+
+        code {
+            background: #f1f5f9;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 10.5px;
+            color: #334155;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        .summary-section {
+            margin-top: 30px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.8fr;
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            border-radius: 10px;
+            padding: 22px 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+
+        .summary-card h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f3460;
+            margin-bottom: 14px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8edf5;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            font-size: 12.5px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .summary-item:last-child { border-bottom: none; }
+        .summary-item .label { color: #64748b; font-weight: 500; }
+        .summary-item .value { font-weight: 700; color: #1a1a2e; }
+        .summary-item .value.green { color: #166534; }
+        .summary-item .value.red { color: #991b1b; }
+        .summary-item .value.blue { color: #1d4ed8; }
+
+        .fail-detail {
+            display: flex;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+        }
+        .fail-detail:last-child { border-bottom: none; }
+        .fail-detail .fail-id {
+            font-weight: 700;
+            color: #991b1b;
+            min-width: 45px;
+        }
+        .fail-detail .fail-desc { color: #475569; line-height: 1.5; }
+        .fail-detail .fail-severity {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+        .severity-high { background: #fee2e2; color: #991b1b; }
+        .severity-medium { background: #fef3c7; color: #92400e; }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 11px;
+            color: #94a3b8;
+            padding: 15px;
+        }
+
+        @media print {
+            body { padding: 15px; background: white; }
+            .module-section { page-break-inside: avoid; }
+            table { font-size: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <div class="report-header">
+        <h1>📋 College Management System — Test Case Report</h1>
+        <div class="subtitle">Project: College Management System (MERN Stack) &nbsp;|&nbsp; Date: 15-Apr-2026 &nbsp;|&nbsp; Tester: Karan Shah</div>
+        <div class="stats-row">
+            <div class="stat-badge total">📦 Total: 20</div>
+            <div class="stat-badge pass">✅ Passed: 17</div>
+            <div class="stat-badge fail">❌ Failed: 3</div>
+            <div class="stat-badge rate">📊 Pass Rate: 85%</div>
+        </div>
+    </div>
+
+    <!-- ═══════════════ MODULE 1 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 1 — Admin Authentication & Registration</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-01</td>
+                    <td class="tc-name">Admin Login – Valid Credentials</td>
+                    <td>1. Navigate to Admin Login<br>2. Enter valid email & password<br>3. Click Login</td>
+                    <td>Email: <code>admin@cms.com</code><br>Password: <code>admin123</code></td>
+                    <td>HTTP 200 OK; JWT token returned; message "Login successful"</td>
+                    <td>HTTP 200 OK; JWT token returned; "Login successful"</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-02</td>
+                    <td class="tc-name">Admin Login – Invalid Password</td>
+                    <td>1. Navigate to Admin Login<br>2. Enter valid email<br>3. Enter wrong password<br>4. Click Login</td>
+                    <td>Email: <code>admin@cms.com</code><br>Password: <code>wrongpass</code></td>
+                    <td>HTTP 401 Unauthorized; message "Invalid password"</td>
+                    <td>HTTP 401 Unauthorized; "Invalid password" returned</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-03</td>
+                    <td class="tc-name">Admin Login – Unregistered Email</td>
+                    <td>1. Navigate to Admin Login<br>2. Enter non-existent email<br>3. Click Login</td>
+                    <td>Email: <code>ghost@cms.com</code><br>Password: <code>anypass</code></td>
+                    <td>HTTP 404 Not Found; message "User not found"</td>
+                    <td>HTTP 404 Not Found; "User not found" returned</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-04</td>
+                    <td class="tc-name">Admin Registration – Valid Data</td>
+                    <td>1. POST /api/admin/register<br>2. Provide all required fields<br>3. Attach profile image</td>
+                    <td>Name: <code>John Doe</code><br>Email: <code>john@cms.com</code><br>Phone: <code>9876543210</code></td>
+                    <td>HTTP 201 Created; auto 6-digit employeeId; default password; sanitized response</td>
+                    <td>HTTP 201 Created; employeeId generated; password excluded from response</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-05</td>
+                    <td class="tc-name">Admin Registration – Duplicate Email</td>
+                    <td>1. Register admin<br>2. Register again with same email<br>3. Observe response</td>
+                    <td>Email: <code>john@cms.com</code> (already exists)<br>Phone: <code>9998887770</code></td>
+                    <td>HTTP 409 Conflict; "Admin with these details already exists"</td>
+                    <td>HTTP 409 Conflict; duplicate detected via $or query</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ MODULE 2 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 2 — Admin Validation & Password Management</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-06</td>
+                    <td class="tc-name">Admin Registration – Invalid Phone Number</td>
+                    <td>1. POST /api/admin/register<br>2. Provide phone &lt; 10 digits<br>3. Observe response</td>
+                    <td>Name: <code>Jane Doe</code><br>Email: <code>jane@cms.com</code><br>Phone: <code>12345</code></td>
+                    <td>HTTP 400 Bad Request; "Phone number must be 10 digits"</td>
+                    <td>HTTP 400 Bad Request; regex <code>^\d{10}$</code> fails; error returned</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr class="fail-row">
+                    <td class="tc-id">TC-07</td>
+                    <td class="tc-name">Admin Forgot Password – Unregistered Email</td>
+                    <td>1. Navigate to Forgot Password<br>2. POST /api/admin/forgot-password<br>3. Enter non-existent email</td>
+                    <td>Email: <code>notexist@cms.com</code></td>
+                    <td>HTTP 404 Not Found; message "No Admin Found"</td>
+                    <td>❌ HTTP 500 Internal Server Error — SMTP misconfiguration causes unhandled exception in sendResetMail()</td>
+                    <td><span class="status-fail">❌ Fail</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ MODULE 3 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 3 — Student Authentication & Registration</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-08</td>
+                    <td class="tc-name">Student Login – Valid Credentials</td>
+                    <td>1. Navigate to Student Login<br>2. Enter enrollment email<br>3. Enter correct password<br>4. Click Login</td>
+                    <td>Email: <code>123456@gmail.com</code><br>Password: <code>student123</code></td>
+                    <td>HTTP 200 OK; JWT token returned; "Login successful"</td>
+                    <td>HTTP 200 OK; token returned; student authenticated</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-09</td>
+                    <td class="tc-name">Student Login – Wrong Password</td>
+                    <td>1. Navigate to Student Login<br>2. Enter valid email<br>3. Enter wrong password<br>4. Click Login</td>
+                    <td>Email: <code>123456@gmail.com</code><br>Password: <code>wrongpassword</code></td>
+                    <td>HTTP 401 Unauthorized; "Invalid password"</td>
+                    <td>HTTP 401 Unauthorized; bcrypt compare fails; error returned</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-10</td>
+                    <td class="tc-name">Student Registration – Valid Data</td>
+                    <td>1. POST /api/student/register<br>2. Provide name, branch, semester, phone<br>3. Attach profile photo</td>
+                    <td>Name: <code>Riya Shah</code><br>Branch: <code>&lt;valid_id&gt;</code><br>Semester: <code>3</code><br>Phone: <code>9123456780</code></td>
+                    <td>HTTP 201 Created; auto enrollmentNo; email auto-generated; default password</td>
+                    <td>HTTP 201 Created; enrollment & email generated; password not exposed</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ MODULE 4 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 4 — Student Search & Password Update</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-11</td>
+                    <td class="tc-name">Student Search – By Enrollment Number</td>
+                    <td>1. Login as Admin<br>2. POST /api/student/search<br>3. Provide valid enrollmentNo</td>
+                    <td><code>{ "enrollmentNo": 123456 }</code></td>
+                    <td>HTTP 200 OK; matching student with populated branch; sorted by enrollmentNo</td>
+                    <td>HTTP 200 OK; student found with populated branch data</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-12</td>
+                    <td class="tc-name">Student Search – No Filter Provided</td>
+                    <td>1. Login as Admin<br>2. POST /api/student/search<br>3. Send empty body {}</td>
+                    <td><code>{}</code> (empty body)</td>
+                    <td>HTTP 400 Bad Request; "Select at least one filter"</td>
+                    <td>HTTP 400 Bad Request; all-null check triggers correctly</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-13</td>
+                    <td class="tc-name">Update Student Password – Weak Password</td>
+                    <td>1. Login as student<br>2. PUT /api/student/update-password<br>3. Provide newPassword &lt; 8 chars</td>
+                    <td>currentPassword: <code>student123</code><br>newPassword: <code>abc</code></td>
+                    <td>HTTP 400 Bad Request; "New password must be at least 8 characters long"</td>
+                    <td>HTTP 400 Bad Request; length check triggers; error returned</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ MODULE 5 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 5 — Attendance Management</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-14</td>
+                    <td class="tc-name">Mark Attendance – Valid Data</td>
+                    <td>1. Login as faculty<br>2. POST /api/attendance/mark<br>3. Provide all required fields & attendanceList</td>
+                    <td>subjectId, date: <code>2026-04-15</code><br>semester: <code>3</code>, branchId<br>attendanceList: <code>[{studentId, status:"present"}]</code></td>
+                    <td>HTTP 200 OK; "Attendance marked successfully"</td>
+                    <td>HTTP 200 OK; bulkWrite with upsert creates records; success message</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-15</td>
+                    <td class="tc-name">Mark Attendance – Missing Fields</td>
+                    <td>1. Login as faculty<br>2. POST /api/attendance/mark<br>3. Omit branchId and attendanceList</td>
+                    <td><code>{ "subjectId": "&lt;id&gt;", "date": "2026-04-15", "semester": 3 }</code></td>
+                    <td>HTTP 400 Bad Request; "All fields are required"</td>
+                    <td>HTTP 400 Bad Request; missing field check triggers correctly</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-16</td>
+                    <td class="tc-name">Get Student Attendance Summary</td>
+                    <td>1. Login as student<br>2. GET /api/attendance/my-attendance<br>3. Observe per-subject data</td>
+                    <td>Auth Token (logged-in student)</td>
+                    <td>HTTP 200 OK; array of <code>{ subjectName, present, total, percentage }</code></td>
+                    <td>HTTP 200 OK; records grouped by subjectId; percentage correctly calculated</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ MODULE 6 ═══════════════ -->
+    <div class="module-section">
+        <div class="module-title">Module 6 — Fees Management</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>TC ID</th>
+                    <th>Test Case Name</th>
+                    <th>Test Steps</th>
+                    <th>Test Data</th>
+                    <th>Expected Output</th>
+                    <th>Actual Output</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tc-id">TC-17</td>
+                    <td class="tc-name">Create Fee – Valid Data</td>
+                    <td>1. Login as admin<br>2. POST /api/fees/create<br>3. Provide studentId, title, amount, dueDate</td>
+                    <td>studentId: <code>&lt;id&gt;</code><br>title: <code>Semester Fee</code><br>amount: <code>15000</code><br>dueDate: <code>2026-05-01</code></td>
+                    <td>HTTP 201 Created; fee record with default status "unpaid"</td>
+                    <td>HTTP 201 Created; fee document created; status "unpaid" confirmed</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+                <tr class="fail-row">
+                    <td class="tc-id">TC-18</td>
+                    <td class="tc-name">Create Fee – Missing dueDate Field</td>
+                    <td>1. Login as admin<br>2. POST /api/fees/create<br>3. Omit dueDate from body</td>
+                    <td>studentId: <code>&lt;id&gt;</code><br>title: <code>Tuition Fee</code><br>amount: <code>10000</code></td>
+                    <td>HTTP 400 Bad Request; "All fields are required"</td>
+                    <td>❌ HTTP 500 Internal Server Error — dueDate validation bypassed; Mongoose cast error unhandled</td>
+                    <td><span class="status-fail">❌ Fail</span></td>
+                </tr>
+                <tr class="fail-row">
+                    <td class="tc-id">TC-19</td>
+                    <td class="tc-name">Late Fee Penalty – Overdue Unpaid Fee</td>
+                    <td>1. Create fee with past dueDate & status "unpaid"<br>2. GET /api/fees/my-fees<br>3. Check lateFee & totalAmount</td>
+                    <td>dueDate: <code>2026-04-05</code><br>amount: <code>5000</code><br>status: <code>unpaid</code><br>(10 days overdue)</td>
+                    <td>lateFee = 500 (10 days × ₹50);<br>totalAmount = 5500</td>
+                    <td>❌ lateFee = 0; totalAmount = 5000 — dueDate string causes NaN in Date comparison; penalty skipped</td>
+                    <td><span class="status-fail">❌ Fail</span></td>
+                </tr>
+                <tr>
+                    <td class="tc-id">TC-20</td>
+                    <td class="tc-name">Bulk Assign Fees – Missing Amount</td>
+                    <td>1. Login as admin<br>2. POST /api/fees/bulk-assign<br>3. Omit amount from body</td>
+                    <td><code>{ "startDate": "2026-04-01", "titlePrefix": "Semester Fee" }</code></td>
+                    <td>HTTP 400 Bad Request; "Start Date and Amount are required"</td>
+                    <td>HTTP 400 Bad Request; !amount check triggers; correct error message</td>
+                    <td><span class="status-pass">✅ Pass</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ═══════════════ SUMMARY ═══════════════ -->
+    <div class="summary-section">
+        <div class="summary-grid">
+            <div class="summary-card">
+                <h3>📊 Test Execution Summary</h3>
+                <div class="summary-item">
+                    <span class="label">Total Test Cases</span>
+                    <span class="value">20</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Passed</span>
+                    <span class="value green">17</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Failed</span>
+                    <span class="value red">3</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Pass Rate</span>
+                    <span class="value blue">85%</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Execution Date</span>
+                    <span class="value">15-Apr-2026</span>
+                </div>
+                <div class="summary-item">
+                    <span class="label">Tester</span>
+                    <span class="value">Karan Shah</span>
+                </div>
+            </div>
+            <div class="summary-card">
+                <h3>🐛 Failed Test Cases — Root Cause Analysis</h3>
+                <div class="fail-detail">
+                    <span class="fail-id">TC-07</span>
+                    <div class="fail-desc">
+                        <strong>Admin Forgot Password – Unregistered Email:</strong> SMTP misconfiguration causes unhandled exception in <code>sendResetMail()</code>. The catch block masks the correct 404 response with a generic 500 error.
+                        <span class="fail-severity severity-high">HIGH</span>
+                    </div>
+                </div>
+                <div class="fail-detail">
+                    <span class="fail-id">TC-18</span>
+                    <div class="fail-desc">
+                        <strong>Create Fee – Missing dueDate:</strong> Controller validation check is bypassed when <code>dueDate</code> is <code>undefined</code>. Mongoose schema cast error is thrown instead of a clean 400 response.
+                        <span class="fail-severity severity-medium">MEDIUM</span>
+                    </div>
+                </div>
+                <div class="fail-detail">
+                    <span class="fail-id">TC-19</span>
+                    <div class="fail-desc">
+                        <strong>Late Fee Penalty – Overdue Fee:</strong> <code>dueDate</code> stored as string causes <code>NaN</code> in <code>Date</code> comparison inside <code>calculatePenalty()</code>. Penalty logic is entirely skipped for overdue fees.
+                        <span class="fail-severity severity-high">HIGH</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        College Management System — Test Case Report | Generated on 15-Apr-2026 | Confidential
+    </div>
+
+</body>
+</html>
